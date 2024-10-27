@@ -3,44 +3,38 @@ package main
 import (
 	"context"
 	"log/slog"
-	"math/rand"
 	"time"
 
 	"github.com/pkg/errors"
 
 	"PulseCheck/internal/task"
-	"PulseCheck/internal/task/alarm"
+	"PulseCheck/internal/task/review"
+	"PulseCheck/internal/tools"
+	"PulseCheck/internal/xhsreq"
 )
 
-func cronCheckLogistics(ctx context.Context) error {
+func ReplyForLatestReview(ctx context.Context) error {
 	slog.Info("cron task has started...")
 	defer slog.Info("cron task has finished.")
-	xhsDeliveryTask := task.NewTask[*alarm.XHSDeliveryStatistics](
-		alarm.NewXiaohongshuStatisticsProvider(),
-		alarm.NewXHSStatisticsHandler(),
-		alarm.NewXHSStatisticsDataFilter(),
-	)
-	err := xhsDeliveryTask.Execute(ctx)
-	return errors.WithMessagef(err, "xiaohongshu delivery task error.")
-}
+	xhsHttpsClient := tools.NewHttpsClient(xhsreq.XiaohongshuDomain)
 
-func checkLogistics(ctx context.Context) error {
-	slog.Info("test task has started...")
-	defer slog.Info("test task has finished.")
-	xhsDeliveryTask := task.NewTask[*alarm.XHSDeliveryStatistics](
-		alarm.NewXiaohongshuStatisticsProvider(),
-		alarm.NewXHSStatisticsHandler(),
-	)
-	err := xhsDeliveryTask.Execute(ctx)
-	return errors.WithMessagef(err, "xiaohongshu delivery task error.")
-}
-func withRandDelay(delayMinutesRange int, do func(ctx context.Context) error) func(ctx context.Context) error {
-	return func(ctx context.Context) error {
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
-		intn := r.Intn(delayMinutesRange)
-		timer := time.NewTimer(time.Duration(intn+1) * time.Minute)
-		slog.Info("the cron task will be delayed.", slog.Int("periodMinutes", intn))
-		<-timer.C
-		return do(ctx)
+	reviewManager := xhsreq.NewReviewManager(ctx, xhsHttpsClient)
+	reviewChat := xhsreq.NewXHSReviewChatWithHTTP(ctx)
+	reviewReply := xhsreq.NewReviewReply(ctx, xhsHttpsClient)
+
+	after := time.Now()
+	start := after.Add(-24 * time.Hour)
+	param := &xhsreq.ReviewSearchParam{
+		ContentTypeList:       []int{2},
+		ReviewReplyStatusList: []int{2},
+		StartTime:             &start,
+		EndTime:               &after,
+		PageSize:              20,
 	}
+	xhsReviewReplyTask := task.NewTask[[]*review.ReviewReplyData](
+		review.NewReviewProvider(param, reviewManager, reviewChat),
+		review.NewReviewReplyHandler(ctx, reviewReply),
+	)
+	err := xhsReviewReplyTask.Execute(ctx)
+	return errors.WithMessagef(err, "xiaohongshu delivery task error.")
 }
