@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+		.centered-content {
+			text-align: center;
+		}
+
+		.container {
+			display: flex;
+			border: 1px solid #ddd; /* Add a border to the container */
+		}
+
+		.headers {
+			display: flex;
+			flex-direction: column;
+			width: auto; /* Adjust width as needed */
+			border-right: 1px solid #ddd; /* Add a border to the right */
+			font-size: x-large;
+		}
+
+		.bodies {
+			display: flex;
+			flex-direction: column;
+			margin-left: 10px; /* Add spacing between columns */
+			height: 50px;
+		}
+
+		.headers div,
+		.bodies div {
+			padding: 10px;
+			border-bottom: 1px solid #ddd; /* Add a border to the bottom */
+		}
+
+		.headers div {
+			text-align: left; /* Center header text */
+		}
+
+	</style>
+	<title>小红书物流异常提醒</title>
+</head>
+<body>
+
+{{/*<h1 class="centered-content" style="color: red">小红书物流异常提醒</h1>*/}}
+
+<div>
+	<div class="headers">
+		<div>全部:{{ .data.Total }}</div>
+		<div>揽收预警:{{ .data.CollectWarnCount }}</div>
+		<div>揽收超时:{{ .data.CollectTimeoutCount }}</div>
+		<div>揽运预警:{{ .data.CollectTransportWarnCount }}</div>
+		<div>揽运超时:{{ .data.CollectTransportTimeoutCount }}</div>
+	</div>
+</div>
+<div>
+	<a style="font-size: x-large" href="{{ .logisticsPageURL }}">点击打开小红书千帆平台物流异常页</a>
+</div>
+
+<div>
+	<a style="font-size: x-large" href="http://47.97.56.11:1903/testserver">点击测试邮件服务是否正常</a>
+</div>
+
+</body>
+</html>
